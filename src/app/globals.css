@@ -1,0 +1,106 @@
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0b0f14;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* ---------- Typography ---------- */
+p { line-height: 1.7; }
+h1, h2, h3 { letter-spacing: -0.3px; margin: 0; }
+h2 { margin-bottom: 10px; }
+
+/* ---------- Links ---------- */
+a, a:visited {
+  color: rgba(210, 230, 255, 0.95);
+  text-decoration: none;
+}
+
+a:hover {
+  color: rgba(255, 255, 255, 0.98);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+.subtle-link, .subtle-link:visited {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+}
+
+.subtle-link:hover {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+/* ---------- Code ---------- */
+
+/* Inline code (not inside a pre) */
+:not(pre) > code {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.9em;
+}
+
+/* rehype-pretty-code block output */
+figure[data-rehype-pretty-code-figure] {
+  margin: 1.25em 0;
+}
+
+figure[data-rehype-pretty-code-figure] pre {
+  border-radius: 12px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.6;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  display: block;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(160, 200, 255, 0.35);
+  background: linear-gradient(180deg, rgba(160, 200, 255, 0.08), rgba(255, 255, 255, 0.015));
+}
+
+.card-title { font-size: 16px; font-weight: 750; margin-bottom: 6px; color: rgba(255, 255, 255, 0.95); }
+.card-meta  { font-size: 13px; opacity: 0.7; margin-bottom: 8px; }
+.card-desc  { opacity: 0.9; }
+
+/* ---------- Social pills ---------- */
+.social-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  font-weight: 650;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.social-pill:hover {
+  transform: translateY(-1px);
+  border-color: rgba(160, 200, 255, 0.35);
+  background: rgba(160, 200, 255, 0.08);
+}

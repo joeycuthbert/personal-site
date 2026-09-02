@@ -1,0 +1,28 @@
+---
+title: "Go"
+date: "2023-06-01"
+summary: "A fully playable Go board game built from scratch in vanilla JavaScript."
+tags: ["JavaScript", "Canvas", "Game"]
+---
+
+A browser-based implementation of Go built with vanilla JavaScript and the HTML Canvas API; no libraries or frameworks.
+
+The core challenge was implementing the capture and liberty-checking algorithm. Each stone (or connected group) is checked recursively in all four directions using a visited array to avoid cycles, determining whether any liberties remain. The same logic drives suicide prevention and the ko rule, which detects illegal moves by comparing serialized board states.
+
+This project started as a CSC 121 (Object Oriented Programming Project) project at Berry College. The game was developed as a Java applet, and I migrated the core logic in to JavaScript later. I wanted to mess around with Claude Code recently, so I asked it to clean up the UI, and embed it in my personal website. 
+
+**Features**
+
+- Capture detection with recursive liberty checking
+- Ko rule enforcement
+- Suicide move prevention
+- Territory scoring via flood-fill at game end (Japanese rules)
+- Pass and resign flow
+- Gradient stone rendering and last-move marker
+
+<iframe
+  src="/go/index.html"
+  width="100%"
+  height="700"
+  style={{ border: 'none', borderRadius: '8px', display: 'block', marginTop: '24px' }}
+/>

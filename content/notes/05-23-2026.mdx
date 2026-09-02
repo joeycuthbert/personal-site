@@ -1,0 +1,137 @@
+---
+title: "Notes Markup Reference"
+date: "2026-05-23"
+summary: "A living example of every formatting option available in these notes: headings, lists, code, tables, math, and more."
+draft: true
+---
+
+This page is a reference for everything you can use when writing notes. Drop a `.mdx` file in `content/notes/` with the frontmatter below and it will appear automatically.
+
+```
+---
+title: "My Note Title"
+date: "2026-05-23"
+summary: "One-line description shown on the index."
+tags: ["linear-algebra", "paper"]
+draft: true   ← hides it in production until you're ready
+---
+```
+
+---
+
+## Headings
+
+```
+## Section
+### Subsection
+#### Sub-subsection
+```
+
+## Section
+### Subsection
+#### Sub-subsection
+
+---
+
+## Text formatting
+
+You can use **bold**, *italic*, ~~strikethrough~~, and `inline code`.
+
+> Blockquotes work well for pulling out a key claim from a paper or a theorem statement.
+
+---
+
+## Lists
+
+Unordered:
+
+- Gradient descent minimizes a loss function
+- Backpropagation computes gradients via the chain rule
+- Learning rate controls step size
+
+Ordered:
+
+1. Forward pass — compute predictions
+2. Compute loss
+3. Backward pass — compute gradients
+4. Update weights
+
+Nested:
+
+- Optimization
+  - First-order methods (SGD, Adam)
+  - Second-order methods (Newton, L-BFGS)
+- Regularization
+  - L1 / L2 weight penalties
+  - Dropout
+
+---
+
+## Code blocks
+
+Fenced blocks with a language tag get syntax highlighting.
+
+```python
+def softmax(x):
+    e = np.exp(x - x.max())
+    return e / e.sum()
+```
+
+```typescript
+function clamp(x: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, x));
+}
+```
+
+---
+
+## Tables
+
+| Method     | Update rule                          | Adaptive LR |
+|------------|--------------------------------------|-------------|
+| SGD        | $\theta \leftarrow \theta - \eta g$  | No          |
+| Momentum   | uses exponential moving average of $g$ | No        |
+| Adam       | combines momentum + RMSProp          | Yes         |
+
+---
+
+## Math — inline
+
+Inline math sits inside single dollar signs: the softmax of logit $z_i$ is
+
+$\sigma(z)_i = \dfrac{e^{z_i}}{\sum_j e^{z_j}}$
+
+and the cross-entropy loss for a single example is $\mathcal{L} = -\log \sigma(z)_y$ where $y$ is the true class.
+
+---
+
+## Math — display blocks
+
+Use double dollar signs for a centred equation block.
+
+The multivariate Gaussian density:
+
+$$
+p(\mathbf{x}) = \frac{1}{(2\pi)^{d/2}|\Sigma|^{1/2}}
+\exp\!\left(-\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu})^\top \Sigma^{-1}(\mathbf{x}-\boldsymbol{\mu})\right)
+$$
+
+Bayes' theorem:
+
+$$
+p(\theta \mid \mathcal{D}) = \frac{p(\mathcal{D} \mid \theta)\, p(\theta)}{p(\mathcal{D})}
+$$
+
+The normal equations for least-squares regression:
+
+$$
+\hat{\boldsymbol{\beta}} = \left(X^\top X\right)^{-1} X^\top \mathbf{y}
+$$
+
+---
+
+## Links
+
+Link to an external source like a paper: [Attention Is All You Need](https://arxiv.org/abs/1706.03762).
+
+Internal links work too: [back to notes](/notes).

@@ -1,0 +1,146 @@
+---
+title: "Acronym Circuits in GPT-2"
+date: "2026-08-30"
+summary: "Hunting for the circuit GPT-2-small uses to form acronyms, with direct logit attribution, activation patching, and automated circuit discovery -- negative results included."
+tags: ["Python", "Mechanistic Interpretability", "TransformerLens", "GPT-2"]
+---
+
+Give GPT-2-small the prompt `"The Tobacco Garage Banana ("` and it reliably completes it with
+`"TGB)"`. That's an interesting task for a next-token predictor to be good at, given there's no
+"acronym" token anywhere in the input. Thus the model has to notice three nouns, pull the first
+letter off each, and assemble them in order. GPT-2's [Indirect Object Identification (IOI)
+circuit](https://arxiv.org/abs/2211.00593) does something structurally similar by copying a
+name from earlier in the sentence to the output via a well-characterized set of attention
+heads. This project asks whether the acronym formation described is the same kind of mechanism, using
+[TransformerLens](https://github.com/TransformerLensOrg/TransformerLens) on GPT-2-small.
+
+The [full project, as four runnable experiment scripts](https://github.com/joeycuthbert/acronym-recognition)
+is on GitHub. This page walks through what each one found.
+
+## Data
+
+2000 synthetic examples of the form `(Word1, Word2, Word3) -> Acronym`, generated from a noun
+list, e.g. `(Tobacco, Garage, Banana) -> TGB`. Every experiment below runs against a subset of
+these with 100-300 examples, chosen for runtime on a CPU.
+
+## How hard is this task for the model?
+
+Before looking for a circuit, it's worth checking the model is actually good at the task.
+We do this by forcing the true answer and reading off the probability at each step:
+
+<img src="/acronym-circuits/probability-by-position.png" alt="Bar chart: model's probability of the correct token at each acronym position" style={{maxWidth: "100%"}} />
+
+The first letter is genuinely hard (14% probability), and the remaining two letters as a unit are much harder still (4%), 
+and the closing parenthesis is nearly free (57%,
+rank ~1). This asymmetry is the reason the experiments below treat "predict the first letter"
+and "predict the rest, given the first letter" as two separate sub-tasks rather than one.
+
+## Which heads correlate with the right answer?
+
+Direct logit attribution (DLA) projects each attention head's output onto the
+"correct-letter minus competitor-letter direction" in vocab space, using the model's own final
+LayerNorm scale. This acts as a correlational measure so a head can score high just because its output
+happens to point the right way without the prediction actually depending on it . This is simply a
+cheap way to generate candidates.
+
+<img src="/acronym-circuits/dla-per-head.png" alt="Heatmap of DLA logit-difference scores across all layers and heads, for first-letter prediction" style={{maxWidth: "100%"}} />
+
+One head, **L10H10**, stands out sharply above everything else, with L8H11, L9H9, and L11H4
+forming a consistent second tier. This ranking held whether the model was predicting the first
+letter or the remaining two, and was stable across many random redraws of which competitor
+letter to score against (mean logit-diff 3.49 ± 0.12 for the first letter, 3.84 ± 0.18 for the
+rest, 95% CI, n=150 each).
+
+## Are those heads necessary?
+
+DLA alone can't distinguish "this head causes the answer" from "this head's output happens to
+correlate with it." To check causally, I ran activation patching: run the model once on a clean
+prompt and once on a corrupted one, then for every head, splice its *clean* output into the
+*corrupted* run and measure how much of the clean-vs-corrupted gap that one substitution
+restores.
+
+<img src="/acronym-circuits/activation-patching.png" alt="Heatmap of activation-patching effect by head, first-noun-swap corruption" style={{maxWidth: "100%"}} />
+
+L10H10 alone restores about half the gap (normalized effect ≈0.53) under a first-noun-swap
+corruption. Because a causal claim shouldn't rest on one arbitrary choice of corruption, I
+also ran it with a second, unrelated corruption (de-capitalizing all three nouns instead of
+swapping one). L10H10, L8H11, and L11H4 show up in the top five under *both* corruptions;
+L9H9 and a couple of others only show up under one. That partial disagreement is worth taking
+seriously rather than only reporting whichever corruption looked cleanest.
+
+I also checked whether any of these heads' output-value (OV) circuit implement a simple "copy the first
+letter" function, the way IOI's name-mover heads do? For all four candidate heads, the answer
+was no (0% top-5 accuracy). Whatever L10H10 is doing, it isn't a context-independent copy
+operation; its causal effect depends on where it actually attends, not just its output weights
+in isolation.
+
+## Does an automated circuit reproduce the behavior?
+
+The above is hand-guided: pick heads DLA flagged, check them individually. [Edge Attribution
+Patching (EAP)](https://github.com/hannamw/EAP-positional) instead scores every edge in the
+model's computation graph automatically and assembles a circuit from the top-scoring ones.
+Baseline logit-gain on this dataset was 3.20; the top individual edges by score were exactly
+the heads found above (`a10.h10->logits`, `a8.h11->logits`, `a9.h9->logits`,
+`a11.h4->logits`), which is a reassuring cross-check on its own.
+
+But the *assembled* 450-edge circuit does not reproduce the behavior: it scores -0.07,
+essentially zero, which is roughly -2% of baseline recovered. Individually-important edges do
+not compose into a working circuit here, at least not via this thresholding procedure. That
+constitutes a negative result. I'm not aware of a good explanation for it yet. A larger
+edge budget, a different attribution method, or interaction effects between edges that a
+linear attribution score can't see are all plausible next things to try, not things I've
+ruled out.
+
+## Where this leaves things
+
+Three independent methods: correlational (DLA), causal (activation patching, under two
+different corruptions), and automated (EAP's edge scores) converge on the same small set of
+heads, most consistently L10H10. That convergence is the strongest finding here. But the
+mechanism doesn't look like IOI's copy circuit (the direct OV-copy test came back negative),
+and the automated circuit built from those same important-looking edges doesn't actually work.
+Both of those are worth reporting as open questions rather than reporting them as closed results.
+
+## How this compares to prior work
+
+After running these experiments, I found [García-Carrasco et al. (2024), "How does GPT-2 Predict
+Acronyms?"](https://arxiv.org/abs/2405.04156) (AISTATS 2024) had already studied the same model
+on a closely related task -- three-letter acronyms from real words, versus this project's
+four-letter-noun-initial task. Their independently-discovered "letter mover" heads are **8.11,
+10.10, 9.9, 11.4** -- exactly the same four heads (L10H10, L8H11, L9H9, L11H4) that DLA,
+activation patching, and EAP all converged on above. Thus we have an independent replication of
+this project's central finding, reached via a completely different method (their patching setup
+vs. this project's DLA + two-corruption patching + EAP).
+
+Two places this project's results diverge from theirs:
+
+- Their circuit is 8 heads, not 4. Beyond the four letter-movers, they identify three
+  "previous token heads" (4.11, 1.0, 2.2) that propagate a word's capital letter backward through
+  earlier layers, plus one more support head (5.8). This project never tested
+  for anything upstream of the movers. This is the most likely explanation for the EAP circuit's failure
+  above: a 450-edge circuit assembled without the heads that deliver information to the movers
+  wouldn't reproduce the behavior even with the movers themselves correctly identified.
+- The OV-copy test asks a different question than their OV analysis. This project tested
+  whether each head's OV circuit alone, ignoring what it attends to, implements a
+  context-independent copy (it doesn't, for any of the four heads). They analyze the OV circuit
+  conditional on attending to the right token, and find a clean copying pattern there. Both can
+  be true at once , but theirs is closer to "does this head copy, given correct attention," this
+  project's is "does the head hard-code an attention-independent copy in its weights."
+
+Their paper also explains a result this project only observed empirically: first-letter
+prediction is hard (14% probability) because, with no earlier word to copy from, it leans on
+attention to the BOS token specifically which they verify by ablation, and worth testing
+directly against this dataset in a follow-up.
+
+## Limitations
+
+- **Synthetic dataset.** The 2000 examples are auto-generated nonsense noun triples, not
+  real-world acronym usage. This characterizes GPT-2's behavior on *this templated task*, not
+  "acronym understanding" in general.
+- **Small samples, CPU-scale.** Each experiment uses 100-300 of the 2000 rows. Confidence
+  intervals are reported for experiments 1-2; experiments 3-4 report point estimates only.
+- **The EAP negative result isn't fully explained here.** The likely cause, per
+  [García-Carrasco et al.](https://arxiv.org/abs/2405.04156), is the missing previous-token heads
+  -- see *How this compares to prior work*, above.
+
+Code, all four experiment scripts, and the raw output this page is drawn from:
+[github.com/joeycuthbert/acronym-recognition](https://github.com/joeycuthbert/acronym-recognition).

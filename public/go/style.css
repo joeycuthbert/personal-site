@@ -1,0 +1,259 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #1e1812;
+  font-family: Georgia, serif;
+  color: #f0e6c8;
+}
+
+/* ---- Home page ---- */
+
+#homeContainer {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+#homeContainer h1 {
+  font-size: 4rem;
+  letter-spacing: 0.15em;
+  color: #f0e6c8;
+}
+
+#homeContainer p {
+  font-size: 1rem;
+  color: #b89a6a;
+  letter-spacing: 0.05em;
+}
+
+#homeButtons {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+/* ---- Game page ---- */
+
+#gameContainer {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+canvas {
+  display: block;
+  border-radius: 4px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+}
+
+/* ---- Sidebar ---- */
+
+#sidebar {
+  width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+#homeLink {
+  font-size: 0.8rem;
+  color: #b89a6a;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+#homeLink:hover {
+  color: #f0e6c8;
+}
+
+#sidebar h1 {
+  font-size: 2.2rem;
+  letter-spacing: 0.12em;
+}
+
+#turnIndicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #d4c4a0;
+}
+
+/* ---- Stone indicators ---- */
+
+.stone-indicator {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stone-indicator.black {
+  background: radial-gradient(circle at 35% 35%, #666, #111);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+}
+
+.stone-indicator.white {
+  background: radial-gradient(circle at 35% 35%, #fff, #ccc);
+  border: 1px solid #aaa;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* ---- Scoreboard ---- */
+
+#scoreBoard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scoreRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.scoreRow span:last-child {
+  margin-left: auto;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.scoreNote {
+  font-size: 0.72rem;
+  color: #8a7050;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+/* ---- Controls ---- */
+
+#gameControls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---- Buttons ---- */
+
+button,
+a.button {
+  display: inline-block;
+  padding: 9px 18px;
+  border: 1px solid #c8a96e;
+  border-radius: 4px;
+  background: transparent;
+  color: #f0e6c8;
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-align: center;
+}
+
+button:hover,
+a.button:hover {
+  background: rgba(200, 169, 110, 0.15);
+}
+
+a.button.primary {
+  background: #c8a96e;
+  color: #1e1812;
+  font-weight: bold;
+}
+
+a.button.primary:hover {
+  background: #d4bb84;
+}
+
+/* ---- Game over panel ---- */
+
+#gameOverPanel {
+  padding: 16px;
+  border: 1px solid #c8a96e;
+  border-radius: 4px;
+}
+
+#gameOverPanel h2 {
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  color: #f0e6c8;
+}
+
+#finalScores {
+  font-size: 0.82rem;
+  line-height: 2;
+  color: #d4c4a0;
+}
+
+.winner {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.95rem;
+  color: #c8a96e;
+  font-weight: bold;
+}
+
+/* ---- Rules page ---- */
+
+#rulesContainer {
+  max-width: 540px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 40px 0;
+}
+
+#rulesContainer h1 {
+  font-size: 2rem;
+  letter-spacing: 0.1em;
+}
+
+.back-link {
+  font-size: 0.8rem;
+  color: #b89a6a;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+}
+
+.back-link:hover {
+  color: #f0e6c8;
+}
+
+.rule h2 {
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c8a96e;
+  margin-bottom: 6px;
+}
+
+.rule p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #d4c4a0;
+}
+
+.rule em {
+  color: #f0e6c8;
+  font-style: normal;
+}
+
+#playBtn {
+  align-self: flex-start;
+  margin-top: 8px;
+}

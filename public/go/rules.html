@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Go — How to Play</title>
+</head>
+<body class="rules">
+  <div id="rulesContainer">
+    <a href="home.html" class="back-link">&#8592; Back</a>
+    <h1>How to Play Go</h1>
+
+    <div class="rule">
+      <h2>Objective</h2>
+      <p>Surround more territory than your opponent. The player who controls the most empty intersections at the end of the game wins.</p>
+    </div>
+
+    <div class="rule">
+      <h2>Taking Turns</h2>
+      <p>Black plays first. Players alternate placing one stone on any empty intersection. Once placed, stones do not move.</p>
+    </div>
+
+    <div class="rule">
+      <h2>Liberties &amp; Capture</h2>
+      <p>Each stone (or connected group of same-color stones) must have at least one adjacent empty point — called a <em>liberty</em>. If your stones surround all of an opponent group's liberties, those stones are captured and removed from the board. Captured stones score one point each.</p>
+    </div>
+
+    <div class="rule">
+      <h2>Ko</h2>
+      <p>You cannot make a move that returns the board to its exact state from the previous turn. This prevents infinite loops of single-stone captures.</p>
+    </div>
+
+    <div class="rule">
+      <h2>Passing &amp; Game End</h2>
+      <p>Either player may pass their turn instead of placing a stone. When both players pass consecutively, the game ends.</p>
+    </div>
+
+    <div class="rule">
+      <h2>Scoring</h2>
+      <p>Each player's score is their <strong>captures</strong> plus the <strong>empty intersections</strong> fully enclosed by their stones. The higher score wins.</p>
+    </div>
+
+    <a href="index.html" class="button primary" id="playBtn">Start Playing</a>
+  </div>
+</body>
+</html>

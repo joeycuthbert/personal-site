@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="style.css">
+  <script src="Board.js" defer></script>
+  <script src="GoApp.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Go</title>
+</head>
+<body class="game">
+  <div id="gameContainer">
+    <canvas id="canvas" width="600" height="600"></canvas>
+
+    <div id="sidebar">
+      <a href="home.html" id="homeLink">&#8592; Home</a>
+      <h1>Go</h1>
+
+      <div id="turnIndicator">
+        <div id="turnStone" class="stone-indicator black"></div>
+        <span id="turnText">Black's Turn</span>
+      </div>
+
+      <div id="scoreBoard">
+        <div class="scoreRow">
+          <div class="stone-indicator black"></div>
+          <span>Black</span>
+          <span id="blackScore">0</span>
+        </div>
+        <div class="scoreRow">
+          <div class="stone-indicator white"></div>
+          <span>White</span>
+          <span id="whiteScore">0</span>
+        </div>
+        <p class="scoreNote">captures</p>
+      </div>
+
+      <div id="gameControls">
+        <button id="passBtn">Pass</button>
+        <button id="newGameBtn">New Game</button>
+      </div>
+
+      <div id="gameOverPanel" style="display:none">
+        <h2>Game Over</h2>
+        <p class="scoreNote">captures + territory</p>
+        <div id="finalScores"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

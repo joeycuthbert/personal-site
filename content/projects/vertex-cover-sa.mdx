@@ -1,0 +1,121 @@
+---
+title: "NuSA: Simulated Annealing for Minimum Vertex Cover"
+date: "2026-09-01"
+summary: "Does bolting simulated annealing onto NuMVC's local search help? A negative result on the removal step, a large positive effect from perturbing the cover size, and a look at why the perturbation's own annealing schedule turned out not to matter."
+tags: ["C", "Python", "Algorithms", "Local Search", "Optimization", "Statistics"]
+---
+
+Given a graph $G = (V, E)$, a vertex cover is a subset $C \subseteq V$ such that every edge in
+$E$ has at least one endpoint in $C$. The Minimum Vertex Cover (MVC) problem asks for the
+smallest such $C$. It's NP-hard, so exact branch-and-bound solvers pay for optimality with
+runtime; local-search algorithms like NuMVC (Cai, Su, Luo & Sattar, *JAIR* 2013) trade the
+optimality guarantee for speed. NuSA takes NuMVC and asks one question: **does adding simulated
+annealing to it help?**
+
+The [full project](https://github.com/joeycuthbert/NuSA) -- a C implementation, a Python
+reference, an analysis script, and the raw result logs -- is on GitHub. This page walks through
+what it found. The answer turned out to be layered: annealing one part of NuMVC does nothing;
+annealing a different part helps a great deal; and the reason it helps has nothing to do with
+annealing.
+
+**Limitations, read first.** This is not state of the art, not novel, and has never been
+compared against a published solver -- every number below is relative to this project's own
+baseline, not reference NuMVC. The benchmark instances have known optima that published solvers
+already reach, so the only thing measured here is time-to-optimum, the weakest and most
+implementation-sensitive kind of claim. And perturbing the cover size isn't a new idea --
+structurally it's an iterated-local-search shake, and TIVC already uses something similar. This
+is an empirical study of an existing idea, not a new algorithm.
+
+## How NuMVC searches
+
+NuMVC alternates removing a vertex from the current cover and adding one back to repair whatever
+edges that removal uncovered, guided by a `dscore` heuristic (how many edges a vertex's removal
+would uncover) and an edge-weighting scheme that raises the cost of leaving stubborn edges
+uncovered over time. Whenever it finds a feasible cover of size $k$, it deterministically drops
+the cheapest vertex and tries for $k - 1$ -- that controlled uphill step is already NuMVC's own
+escape mechanism, built in before this project touched anything. The question was whether
+classic simulated annealing -- a temperature-scheduled Metropolis acceptance test -- adds
+anything on top, tried in two different places.
+
+## Finding 1: annealing the removal step does nothing
+
+The obvious place to try annealing is the removal decision itself: instead of always removing
+the best-`dscore` vertex, accept a worse one with probability $\exp(\Delta / T)$. On a synthetic
+500-vertex instance (density matched to C500.9's complement), 4 seeds, 12s each:
+
+| config | sizes | acceptance |
+|---|---|---|
+| default (T=3.0) | 444, 444, 444, 444 | 0.01 |
+| descent (T→0) | 444, 444, 444, 444 | 0.00 |
+| warm (T_min=2.0) | 444, 444, 444, 444 | 0.36 |
+| hot (T=10) | 445, 445, 445, 445 | 0.72 |
+
+Zero temperature matches the tuned annealer exactly; high temperature is strictly worse. The
+likely reason: NuMVC's edge-weighting scheme is already a targeted, memory-based diversification
+mechanism, raising the cost of a configuration until it becomes untenable. Undirected Metropolis
+noise on the same decision competes with that guidance rather than adding to it.
+
+## Finding 2: perturbing the cover level has a large effect
+
+A different intervention: instead of touching which vertex gets removed, occasionally *add* a
+vertex without removing one, so the search is forced off a level (a fixed cover size) it's stuck
+on. On C1000.9 (60 runs per arm, 30s cutoff, target 932, the true optimum):
+
+| arm | median level-ups | success | RMST | HR vs. baseline |
+|---|---|---|---|---|
+| A: no perturbation | 0 | 28/60 | 21.56s | -- |
+| B: rate ~1/32000 | 213 | 41/60 | 15.63s | 2.02 [1.25, 3.27] |
+| C: rate ~1/2500 | 966 | 57/60 | 8.43s | 5.21 [3.31, 8.19] |
+| D: rate ~1/263 | 9,522 | 59/60 | 7.64s | 5.95 [3.79, 9.33] |
+
+<img src="/vertex-cover/km-survival.png" alt="Kaplan-Meier survival curves for time to reach cover size 932, four arms, C1000.9" style={{maxWidth: "100%"}} />
+
+Log-rank $p < 10^{-6}$ for arms C and D against A. D vs. C is *not* significant (HR 1.14,
+p = 0.55) -- the effect saturates. Going from zero to roughly a thousand perturbations buys
+nearly everything; a further 10x in rate buys nothing measurable. On the smaller C500.9 instance
+(25 runs, 30s cutoff, target 443, the optimum), the level-perturbation arm reaches 25/25 with a
+mean time-to-target of 0.445s -- no baseline log for that instance survives in the record, so
+that comparison isn't reported here.
+
+## Finding 3: the annealing schedule on that perturbation was inert
+
+The perturbation fires on a patience counter: after `patience` iterations at the same level,
+fire with probability $\exp(-1/T)$ each subsequent iteration. The expected interval between
+perturbations is `patience + 1/p`, and temperature only controls the second term. At
+`patience = 2000`, cooling $T$ from 2.0 to 0.5 changes the firing rate by **0.3%** -- the
+patience gate dominates completely, and below $T \approx 0.13$ the rate collapses to zero rather
+than declining gradually. The schedule was never capable of modulating anything, in either
+configuration tested. A related trap: a schedule specified in *iterations* silently rescales
+when the iteration budget changes -- one tuned on 150k-iteration runs was effectively switched
+off for 94% of a 12M-iteration run.
+
+## Why survival analysis, not just success rate
+
+Time-to-target data under a fixed cutoff is right-censored: a run that didn't reach the target
+didn't "fail," it just hadn't reached it yet when the budget ran out. Comparing success rates
+alone throws away timing information from the runs that succeeded; comparing mean
+time-to-target alone throws away the runs that missed, understating how much worse a weak arm
+really is. The log-rank test, exponential hazard ratio, and bootstrap-CI restricted mean
+survival time (RMST) above are standard tools for exactly this -- they use every run, hit or
+miss. `analysis/analyze.py` in the repo implements all of it against the raw solver logs, using
+only the Python standard library.
+
+## A correctness bug along the way
+
+The original incremental `dscore` update negated incorrectly on flip: it added the edge weight
+inside the neighbor loop, landing on 0 instead of the correct `+S`. Every touched vertex ended
+up with `dscore == 0` -- the maximum possible value for a cover vertex -- so the search
+preferentially re-removed vertices it had just added. The fix is a single negation applied
+outside the loop. Both implementations now carry a debug mode that recomputes all scores from
+scratch and asserts they match the incremental values.
+
+## Where this leaves things
+
+A negative result and a positive one, and neither is subtle: undirected annealing noise on the
+removal step is dead weight next to NuMVC's existing edge-weighting mechanism, while a simple,
+un-annealed perturbation on cover size cuts median time-to-optimum by roughly 3x on the hardest
+instance tested. The most important thing missing is a real comparison against reference NuMVC
+rather than this project's own baseline -- see the repo's README for the full future-work list.
+
+Code, both implementations (C and Python), the analysis script, and every raw result log this
+page is drawn from: [github.com/joeycuthbert/NuSA](https://github.com/joeycuthbert/NuSA).
