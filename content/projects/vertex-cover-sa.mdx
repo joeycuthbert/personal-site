@@ -7,24 +7,23 @@ tags: ["C", "Python", "Algorithms", "Local Search", "Optimization", "Statistics"
 
 Given a graph $G = (V, E)$, a vertex cover is a subset $C \subseteq V$ such that every edge in
 $E$ has at least one endpoint in $C$. The Minimum Vertex Cover (MVC) problem asks for the
-smallest such $C$. It's NP-hard, so exact branch-and-bound solvers pay for optimality with
-runtime; local-search algorithms like NuMVC (Cai, Su, Luo & Sattar, *JAIR* 2013) trade the
-optimality guarantee for speed. NuSA takes NuMVC and asks one question: **does adding simulated
-annealing to it help?**
+smallest such $C$. It's an NP-hard problem, so exact branch-and-bound solvers pay for optimality with
+runtime while local-search algorithms like NuMVC (Cai, Su, Luo & Sattar, *JAIR* 2013) trade
+exactness for speed. NuSA takes NuMVC and asks: does adding simulated
+annealing to it help?
 
-The [full project](https://github.com/joeycuthbert/NuSA) -- a C implementation, a Python
-reference, an analysis script, and the raw result logs -- is on GitHub. This page walks through
-what it found. The answer turned out to be layered: annealing one part of NuMVC does nothing;
-annealing a different part helps a great deal; and the reason it helps has nothing to do with
+The full project can be found [here](https://github.com/joeycuthbert/NuSA). Here we will walk through
+what it found.  
+
+TLDR: Annealing one part of NuMVC does nothing, but
+annealing a different part helps a great deal, and the reason it helps has nothing to do with
 annealing.
 
-**Limitations, read first.** This is not state of the art, not novel, and has never been
-compared against a published solver -- every number below is relative to this project's own
-baseline, not reference NuMVC. The benchmark instances have known optima that published solvers
-already reach, so the only thing measured here is time-to-optimum, the weakest and most
-implementation-sensitive kind of claim. And perturbing the cover size isn't a new idea --
-structurally it's an iterated-local-search shake, and TIVC already uses something similar. This
-is an empirical study of an existing idea, not a new algorithm.
+**Introduction.** This is not state of the art algorithm. This project began as a project for CSE6140 (Algorithms) at Georgia Tech. I had previous experience with simulated annealing while taking
+ISyE6645 (Monte Carlo Methods) the semester prior, and it sprang to mind when I had to implement a local-search algorithm for MVC as part of the project. The course provided some (fairly easy)
+benchmarks to test our algorithms on and NuSA performed incredibly well on them. This led me to testing the algorithm further on a few DIMACS benchmarks and comparing against the original NuMVC
+results. Unfortunately, NuSA did not live up to the expectations I had set, and consistently failed on some of the smallest DIMACS graphs which NuMVC solved fairly quickly. This led me to attempt
+to find out if simulated annealing was helping the algorithm at all. 
 
 ## How NuMVC searches
 
@@ -32,34 +31,36 @@ NuMVC alternates removing a vertex from the current cover and adding one back to
 edges that removal uncovered, guided by a `dscore` heuristic (how many edges a vertex's removal
 would uncover) and an edge-weighting scheme that raises the cost of leaving stubborn edges
 uncovered over time. Whenever it finds a feasible cover of size $k$, it deterministically drops
-the cheapest vertex and tries for $k - 1$ -- that controlled uphill step is already NuMVC's own
-escape mechanism, built in before this project touched anything. The question was whether
-classic simulated annealing -- a temperature-scheduled Metropolis acceptance test -- adds
-anything on top, tried in two different places.
+the cheapest vertex and tries for $k - 1$. The question I wanted to answer was whether
+classic simulated annealing adds anything on top, tried in two different places.
 
 ## Finding 1: annealing the removal step does nothing
 
-The obvious place to try annealing is the removal decision itself: instead of always removing
-the best-`dscore` vertex, accept a worse one with probability $\exp(\Delta / T)$. On a synthetic
-500-vertex instance (density matched to C500.9's complement), 4 seeds, 12s each:
+The obvious place to try annealing is the removal decision itself. Instead of always removing
+the best-`dscore` vertex, accept a worse one with probability $\exp(\Delta / T)$. Tested directly
+on `data/C500.txt` -- the real C500.9 complement, not a synthetic stand-in -- 10 seeds, 12s
+cutoff, target 443 (the optimum):
 
-| config | sizes | acceptance |
-|---|---|---|
-| default (T=3.0) | 444, 444, 444, 444 | 0.01 |
-| descent (T→0) | 444, 444, 444, 444 | 0.00 |
-| warm (T_min=2.0) | 444, 444, 444, 444 | 0.36 |
-| hot (T=10) | 445, 445, 445, 445 | 0.72 |
+| config | success | mean time to target | acceptance |
+|---|---|---|---|
+| default (T=3.0, shipped schedule) | 10/10 | 0.337s | 0.01-0.46 (rises as it cools) |
+| descent (T≈0) | 10/10 | 0.215s | 0.01 |
+| warm (constant T=2.0) | 9/10 | 2.818s | 0.36 |
+| hot (constant T=10) | **0/10** | never (best found: 444, one above optimum) | 0.82 |
 
-Zero temperature matches the tuned annealer exactly; high temperature is strictly worse. The
-likely reason: NuMVC's edge-weighting scheme is already a targeted, memory-based diversification
-mechanism, raising the cost of a configuration until it becomes untenable. Undirected Metropolis
-noise on the same decision competes with that guidance rather than adding to it.
+Near-zero temperature is at least as good as the tuned default -- slightly faster, here. Raising
+the temperature doesn't just slow the search down: at T=10 it never reaches the optimum at all
+inside the cutoff. The likely reason, same as before: NuMVC's edge-weighting scheme is already a
+targeted, memory-based diversification mechanism, raising the cost of a configuration until it
+becomes untenable. Undirected Metropolis noise on the same decision competes with that guidance
+rather than adding to it.
 
 ## Finding 2: perturbing the cover level has a large effect
 
 A different intervention: instead of touching which vertex gets removed, occasionally *add* a
 vertex without removing one, so the search is forced off a level (a fixed cover size) it's stuck
-on. On C1000.9 (60 runs per arm, 30s cutoff, target 932, the true optimum):
+on. On C1000.9 (60 runs per arm, 30s cutoff, target 932 -- the best known size, not proven
+optimal, see the NuMVC comparison below):
 
 | arm | median level-ups | success | RMST | HR vs. baseline |
 |---|---|---|---|---|
@@ -89,6 +90,36 @@ configuration tested. A related trap: a schedule specified in *iterations* silen
 when the iteration budget changes -- one tuned on 150k-iteration runs was effectively switched
 off for 94% of a 12M-iteration run.
 
+## Comparison to the original NuMVC
+
+This is the comparison I mentioned above -- the one that told me NuSA wasn't living up to
+reference NuMVC on some of these instances. Cai, Su, Luo & Sattar (2013), Table 1, report NuMVC's
+performance on these same four instances: 100 independent runs each, 2000s cutoff, on a 3GHz
+Intel Core 2 Duo E8400 with 4GB RAM.
+
+| instance | \|V\| | best-known VC size | proven optimal? | success | avg time | avg steps |
+|---|---|---|---|---|---|---|
+| C125.9 | 125 | 91 | yes | 100/100 | &lt;0.001s | 136 |
+| C250.9 | 250 | 206 | yes | 100/100 | &lt;0.001s | 3,256 |
+| C500.9 | 500 | 443 | yes | 100/100 | 0.128s | 133,595 |
+| C1000.9 | 1000 | 932 | **no** -- best known only | 100/100 | 2.020s | 1,154,155 |
+
+(That's also why C1000.9's target above is described as "best known" rather than "optimal" --
+the paper marks only 91/206/443 with an asterisk for proven optimality.)
+
+This isn't apples-to-apples: different hardware (a 2008-era Core 2 Duo vs. whatever ran the logs
+in the repo, almost certainly faster per core), a 2000s cutoff instead of 30s, and their C++
+implementation instead of this project's C port. With all of that granted, the gap is still large.
+Reference NuMVC reaches C1000.9's target in 100/100 runs, averaging 2.02s. This project's *best*
+arm on that instance (D, the constant-temperature level perturbation above) reaches it in 59/60
+runs with a 3.8x larger RMST (7.64s vs. 2.02s), and the no-perturbation baseline manages only
+28/60. On the smaller C500.9, the gap is narrower in kind if not in size -- reference NuMVC
+averages 0.128s; this project's own removal-step-ablation default arm above (a different
+experiment, same instance) averages 0.337s at 10/10, roughly 2.6x slower, same order of
+magnitude. The gap widening with instance size rather than staying flat suggests whatever
+reference NuMVC does better matters more as the graph gets harder, not less -- worth digging into,
+not just noting.
+
 ## Why survival analysis, not just success rate
 
 Time-to-target data under a fixed cutoff is right-censored: a run that didn't reach the target
@@ -114,8 +145,10 @@ scratch and asserts they match the incremental values.
 A negative result and a positive one, and neither is subtle: undirected annealing noise on the
 removal step is dead weight next to NuMVC's existing edge-weighting mechanism, while a simple,
 un-annealed perturbation on cover size cuts median time-to-optimum by roughly 3x on the hardest
-instance tested. The most important thing missing is a real comparison against reference NuMVC
-rather than this project's own baseline -- see the repo's README for the full future-work list.
+instance tested. Neither closes the gap to reference NuMVC, though -- even this project's best
+configuration is still meaningfully behind published NuMVC on the same instances. A controlled,
+same-hardware comparison (not just published numbers next to my own) is the most useful thing
+left to do here -- see the repo's README for the full future-work list.
 
 Code, both implementations (C and Python), the analysis script, and every raw result log this
 page is drawn from: [github.com/joeycuthbert/NuSA](https://github.com/joeycuthbert/NuSA).
