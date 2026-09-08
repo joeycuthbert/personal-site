@@ -19,8 +19,9 @@ TLDR: Annealing one part of NuMVC does nothing, but
 annealing a different part helps a great deal, and the reason it helps has nothing to do with
 annealing.
 
-**Introduction.** This is not state of the art algorithm. This project began as a project for CSE6140 (Algorithms) at Georgia Tech. I had previous experience with simulated annealing while taking
-ISyE6645 (Monte Carlo Methods) the semester prior, and it sprang to mind when I had to implement a local-search algorithm for MVC as part of the project. The course provided some (fairly easy)
+**Introduction.** This project began as a project for CSE6140 (Algorithms) at Georgia Tech. I had previous experience with simulated annealing while taking
+ISyE6645 (Monte Carlo Methods) the semester prior, and it sprang to mind when I had to implement a local-search algorithm for MVC as part of an end of class project. 
+The course provided some (fairly easy)
 benchmarks to test our algorithms on and NuSA performed incredibly well on them. This led me to testing the algorithm further on a few DIMACS benchmarks and comparing against the original NuMVC
 results. Unfortunately, NuSA did not live up to the expectations I had set, and consistently failed on some of the smallest DIMACS graphs which NuMVC solved fairly quickly. This led me to attempt
 to find out if simulated annealing was helping the algorithm at all. 
@@ -30,15 +31,15 @@ to find out if simulated annealing was helping the algorithm at all.
 NuMVC alternates removing a vertex from the current cover and adding one back to repair whatever
 edges that removal uncovered, guided by a `dscore` heuristic (how many edges a vertex's removal
 would uncover) and an edge-weighting scheme that raises the cost of leaving stubborn edges
-uncovered over time. Whenever it finds a feasible cover of size $k$, it deterministically drops
+uncovered over time. Unlike other MVC algorithms, the choice between which vertex to remove and subsequently add are independent. 
+Whenever it finds a feasible cover of size $k$, it deterministically drops
 the cheapest vertex and tries for $k - 1$. The question I wanted to answer was whether
 classic simulated annealing adds anything on top, tried in two different places.
 
 ## Finding 1: annealing the removal step does nothing
 
 The obvious place to try annealing is the removal decision itself. Instead of always removing
-the best-`dscore` vertex, accept a worse one with probability $\exp(\Delta / T)$. Tested directly
-on `data/C500.txt` -- the real C500.9 complement, not a synthetic stand-in -- 10 seeds, 12s
+the best-`dscore` vertex, accept a worse one with probability $\exp(\Delta / T)$. Tested on C550.9 with 10 seeds, 12s
 cutoff, target 443 (the optimum):
 
 | config | success | mean time to target | acceptance |
@@ -46,55 +47,50 @@ cutoff, target 443 (the optimum):
 | default (T=3.0, shipped schedule) | 10/10 | 0.337s | 0.01-0.46 (rises as it cools) |
 | descent (T≈0) | 10/10 | 0.215s | 0.01 |
 | warm (constant T=2.0) | 9/10 | 2.818s | 0.36 |
-| hot (constant T=10) | **0/10** | never (best found: 444, one above optimum) | 0.82 |
+| hot (constant T=10) | **0/10** | never (best found: 444) | 0.82 |
 
-Near-zero temperature is at least as good as the tuned default -- slightly faster, here. Raising
-the temperature doesn't just slow the search down: at T=10 it never reaches the optimum at all
-inside the cutoff. The likely reason, same as before: NuMVC's edge-weighting scheme is already a
-targeted, memory-based diversification mechanism, raising the cost of a configuration until it
-becomes untenable. Undirected Metropolis noise on the same decision competes with that guidance
+We see near-zero temperature is at least as good as the tuned default. Interestingly, raising
+the temperature slows the search down, and in the extreme case at T=10 it never reaches the optimum at all
+inside the cutoff. The likely reason is that NuMVC's edge-weighting scheme is already a
+good enough diversification mechanism. Undirected noise on the same decision competes with that guidance
 rather than adding to it.
 
 ## Finding 2: perturbing the cover level has a large effect
 
-A different intervention: instead of touching which vertex gets removed, occasionally *add* a
-vertex without removing one, so the search is forced off a level (a fixed cover size) it's stuck
-on. On C1000.9 (60 runs per arm, 30s cutoff, target 932 -- the best known size, not proven
-optimal, see the NuMVC comparison below):
+We inspect a different intervention by occasionally adding a
+vertex without removing one, so the search is forced off a level it's stuck
+on. On C1000.9 with 60 runs per arm, 30s cutoff, and target 932 (best known size):
 
-| arm | median level-ups | success | RMST | HR vs. baseline |
-|---|---|---|---|---|
-| A: no perturbation | 0 | 28/60 | 21.56s | -- |
-| B: rate ~1/32000 | 213 | 41/60 | 15.63s | 2.02 [1.25, 3.27] |
-| C: rate ~1/2500 | 966 | 57/60 | 8.43s | 5.21 [3.31, 8.19] |
-| D: rate ~1/263 | 9,522 | 59/60 | 7.64s | 5.95 [3.79, 9.33] |
+| arm                | median level-ups | success |   RMST | HR vs. baseline   |
+|:-------------------|-----------------:|--------:|-------:|:------------------|
+| A: no perturbation |                0 |   28/60 | 21.56s | --                |
+| B: rate ~1/32000   |              213 |   41/60 | 15.63s | 2.02 [1.25, 3.27] |
+| C: rate ~1/2500    |              966 |   57/60 |  8.43s | 5.21 [3.31, 8.19] |
+| D: rate ~1/263     |            9,522 |   59/60 |  7.64s | 5.95 [3.79, 9.33] |
 
 <img src="/vertex-cover/km-survival.png" alt="Kaplan-Meier survival curves for time to reach cover size 932, four arms, C1000.9" style={{maxWidth: "100%"}} />
 
-Log-rank $p < 10^{-6}$ for arms C and D against A. D vs. C is *not* significant (HR 1.14,
-p = 0.55) -- the effect saturates. Going from zero to roughly a thousand perturbations buys
-nearly everything; a further 10x in rate buys nothing measurable. On the smaller C500.9 instance
-(25 runs, 30s cutoff, target 443, the optimum), the level-perturbation arm reaches 25/25 with a
-mean time-to-target of 0.445s -- no baseline log for that instance survives in the record, so
-that comparison isn't reported here.
+
+We see from the plot that the effect saturates. Arms C and D both beat the baseline (A)
+([log-rank](https://metricgate.com/docs/log-rank-test) $p < 10^{-6}$) but they do not
+beat each other. Comparing D vs. C gives a
+[hazard ratio](https://metricgate.com/docs/hazard-ratio-calculator-from-km) of 1.14
+with $p = 0.55$, which means the difference between the two arms is negligible. Thus going from zero
+perturbations to roughly a thousand buys nearly all of the speedup and a further
+10x in rate buys nothing measurable.
 
 ## Finding 3: the annealing schedule on that perturbation was inert
 
 The perturbation fires on a patience counter: after `patience` iterations at the same level,
 fire with probability $\exp(-1/T)$ each subsequent iteration. The expected interval between
 perturbations is `patience + 1/p`, and temperature only controls the second term. At
-`patience = 2000`, cooling $T$ from 2.0 to 0.5 changes the firing rate by **0.3%** -- the
-patience gate dominates completely, and below $T \approx 0.13$ the rate collapses to zero rather
-than declining gradually. The schedule was never capable of modulating anything, in either
-configuration tested. A related trap: a schedule specified in *iterations* silently rescales
-when the iteration budget changes -- one tuned on 150k-iteration runs was effectively switched
-off for 94% of a 12M-iteration run.
+`patience = 2000`, cooling $T$ from 2.0 to 0.5 changes the firing rate by **0.3%**, thus the
+patience gate dominates completely. Thus the annealing schedule was negligible in both configurations, since for most of the run-time the annealing is not even turned on. 
 
 ## Comparison to the original NuMVC
 
-This is the comparison I mentioned above -- the one that told me NuSA wasn't living up to
-reference NuMVC on some of these instances. Cai, Su, Luo & Sattar (2013), Table 1, report NuMVC's
-performance on these same four instances: 100 independent runs each, 2000s cutoff, on a 3GHz
+Here are NuMVC's results on some of the DIMACS benchmarks used in this project. We report NuMVC's
+performance on these four instances: 100 independent runs each, 2000s cutoff, on a 3GHz
 Intel Core 2 Duo E8400 with 4GB RAM.
 
 | instance | \|V\| | best-known VC size | proven optimal? | success | avg time | avg steps |
@@ -104,51 +100,23 @@ Intel Core 2 Duo E8400 with 4GB RAM.
 | C500.9 | 500 | 443 | yes | 100/100 | 0.128s | 133,595 |
 | C1000.9 | 1000 | 932 | **no** -- best known only | 100/100 | 2.020s | 1,154,155 |
 
-(That's also why C1000.9's target above is described as "best known" rather than "optimal" --
-the paper marks only 91/206/443 with an asterisk for proven optimality.)
 
-This isn't apples-to-apples: different hardware (a 2008-era Core 2 Duo vs. whatever ran the logs
-in the repo, almost certainly faster per core), a 2000s cutoff instead of 30s, and their C++
-implementation instead of this project's C port. With all of that granted, the gap is still large.
-Reference NuMVC reaches C1000.9's target in 100/100 runs, averaging 2.02s. This project's *best*
-arm on that instance (D, the constant-temperature level perturbation above) reaches it in 59/60
-runs with a 3.8x larger RMST (7.64s vs. 2.02s), and the no-perturbation baseline manages only
-28/60. On the smaller C500.9, the gap is narrower in kind if not in size -- reference NuMVC
-averages 0.128s; this project's own removal-step-ablation default arm above (a different
-experiment, same instance) averages 0.337s at 10/10, roughly 2.6x slower, same order of
-magnitude. The gap widening with instance size rather than staying flat suggests whatever
-reference NuMVC does better matters more as the graph gets harder, not less -- worth digging into,
-not just noting.
+## Why survival analysis?
 
-## Why survival analysis, not just success rate
+Time-to-target data under a fixed cutoff is right-censored. In other words, a run that didn't reach the target
+didn't necessarily "fail", it just hadn't reached it yet when the budget ran out. Comparing success rates
+alone throws away timing information from the runs that succeeded, and comparing mean
+time-to-target throws away the runs that missed. The log-rank test, exponential hazard ratio, and restricted mean
+survival time (RMST) above are standard tools for this analysis since they use every run, whether it was a hit or
+miss. 
 
-Time-to-target data under a fixed cutoff is right-censored: a run that didn't reach the target
-didn't "fail," it just hadn't reached it yet when the budget ran out. Comparing success rates
-alone throws away timing information from the runs that succeeded; comparing mean
-time-to-target alone throws away the runs that missed, understating how much worse a weak arm
-really is. The log-rank test, exponential hazard ratio, and bootstrap-CI restricted mean
-survival time (RMST) above are standard tools for exactly this -- they use every run, hit or
-miss. `analysis/analyze.py` in the repo implements all of it against the raw solver logs, using
-only the Python standard library.
+## Conclusion
 
-## A correctness bug along the way
-
-The original incremental `dscore` update negated incorrectly on flip: it added the edge weight
-inside the neighbor loop, landing on 0 instead of the correct `+S`. Every touched vertex ended
-up with `dscore == 0` -- the maximum possible value for a cover vertex -- so the search
-preferentially re-removed vertices it had just added. The fix is a single negation applied
-outside the loop. Both implementations now carry a debug mode that recomputes all scores from
-scratch and asserts they match the incremental values.
-
-## Where this leaves things
-
-A negative result and a positive one, and neither is subtle: undirected annealing noise on the
-removal step is dead weight next to NuMVC's existing edge-weighting mechanism, while a simple,
-un-annealed perturbation on cover size cuts median time-to-optimum by roughly 3x on the hardest
-instance tested. Neither closes the gap to reference NuMVC, though -- even this project's best
-configuration is still meaningfully behind published NuMVC on the same instances. A controlled,
-same-hardware comparison (not just published numbers next to my own) is the most useful thing
-left to do here -- see the repo's README for the full future-work list.
+We are left with some positive and negative results. On one hand the algorithm that got me a near perfect score on my graduate algorithms final project was in reality far worse than the algorithm it drew inspiration from, and
+attempted to build off of. Rather than be discouraged from this negative result, I was able to build tests that helped explain why it failed, and subsequently look for another improvement on the algorithm such as perturbing the solution on a 
+given schedule. Yet, this still doesn't close the gap in comparison to NuMVC. A controlled,
+same-hardware comparison would be the most useful comparison. 
 
 Code, both implementations (C and Python), the analysis script, and every raw result log this
 page is drawn from: [github.com/joeycuthbert/NuSA](https://github.com/joeycuthbert/NuSA).
+
