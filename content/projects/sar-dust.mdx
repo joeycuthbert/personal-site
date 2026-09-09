@@ -5,26 +5,28 @@ summary: "Benchmarking a ResNet-18 classifier against 9 noise models, then using
 tags: ["Python", "PyTorch", "Computer Vision", "SAR", "Robustness"]
 ---
 
-Work done at the Sensors Directorate Internship Program with NASIC mentors, exploring how noise attacks degrade
-Synthetic Aperture Radar (SAR) image classification and how to make CNN classifiers more
-robust to it.
+This work was done at the Sensors Directorate Internship Program with NASIC mentors. We explore how noise attacks degrade Synthetic
+Aperture Radar (SAR) image classifcation and how to make CNN classifiers more robust to it. 
+
 
 We benchmarked a ResNet-18 trained on clean SAR imagery (97.14% accuracy, no noise)
 against 9 different noise models inlcuding dependent (multiplicative Gaussian, Poisson), independent
-(Gaussian, Rayleigh, Uniform, Erlang), and structural (Brownian, periodic, salt-and-pepper) models
+(Gaussian, Rayleigh, Uniform, Erlang), and structural (Brownian, periodic, salt-and-pepper) noise models
 at varying intensity (PSNR). The model generalizes well to light noise but collapses onto a
 single predicted class once PSNR drops to roughly 10-15 dB, a result that held consistently
 across all 9 noise models.
 
-To improve robustness, we applied a bilateral speckle filter to isolate targets from
-background clutter, using an adaptive threshold (`T = mean + 2*stddev`) on the smoothed pixel
+To improve robustness, we add isolated targets to the training set.
+To isolate targets, we first apply a bilateral speckle filter, and use an adaptive threshold 
+(`T = mean + 2*stddev`) on the smoothed pixel
 distribution. Mixing these isolated-target samples 50/50 into training produced a model that
-matched baseline accuracy on clean data (97.93%) while handling noisy inputs far better --
-up to 66.7% higher accuracy than the original model at PSNR 13 dB. Guided Grad-CAM saliency
-maps show why: the 50/50 model shifts attention off of target shadows and onto the target
+matched baseline accuracy on clean data (97.93%) while handling noisy inputs far better. Our best result was a 66.7% gain 
+in classification accuracy at around 13 dB of PSNR. 
+We compute Guided Grad-CAM saliency
+maps to help explain why. We see from the plots that the 50/50 model shifts attention off of target shadows and onto the target
 shape itself. Thus our conclusion is that we can increase model robustness by simply inducing shape bias within the model. 
 
-Full details, methodology, and figures are in the poster below.
+Full details and figures are in the poster below.
 
 <div style={{ border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
   <iframe
