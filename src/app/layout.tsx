@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "katex/dist/katex.min.css";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 import { NavSocials } from "@/components/NavSocials";
 
 export const metadata: Metadata = {
@@ -40,6 +41,8 @@ export default function RootLayout({
         <footer style={{ marginTop: 48, opacity: 0.6, fontSize: 14 }}>
           © {new Date().getFullYear()}
         </footer>
+
+        <Analytics />
       </body>
     </html>
   );
