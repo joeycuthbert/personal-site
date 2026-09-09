@@ -54,19 +54,19 @@ export default function Home() {
                 Joey Cuthbert
               </h1>
               <p style={{ margin: "10px 0 0", opacity: 0.85, lineHeight: 1.6 }}>
-                I am a graduate student at Georgia Tech pursuing my Master's degree in Computational Science
-                and Engineering. I graduated from Berry College (c/o 2025) where I studied Math and Computer Science while competing
-                on the Mens' Lacrosse team. In my free time I enjoy playing chess, golf, hiking, and watching sports.
+                I'm a Master's student in Computational Science and Engineering at Georgia Tech,
+                focused on machine learning, systems engineering, and modeling and simulation. 
               </p>
               <p style={{ margin: "10px 0 0", opacity: 0.85, lineHeight: 1.6 }}>
-                My interests include data science and machine learning as well as systems engineering. I plan to graduate from
-                Georgia Tech in December 2026 and am looking for full-time opportunities starting in early 2027.
+                This past summer I worked with the National Air and Space Intelligence Center (NASIC) through the Sensors Directorate
+                Internship Program, where I studied the robustness of CNNs on synthetic aperture radar images against noise attacks.
+                Before Georgia Tech, I studied Math and Computer Science at Berry College, graduating in 2025. 
+                My undergraduate research focused on feature-less machine learning for game predictions, and I also competed on the NCAA 
+               Men's Lacrosse team. 
               </p>
               <p style={{ margin: "10px 0 0", opacity: 0.85, lineHeight: 1.6 }}>
-                My experience includes research in machine learning while attending Berry College as an undergraduate, as well as with the
-                National Air and Space Intelligence Center (NASIC) during the Sensors Directorate Internship Program over the summer of 2026.
-                My graduate coursework spans Machine Learning, Systems Engineering, Modeling and Simulation, High Performance Computing, and Algorithms,
-                with technical electives in Transportation Systems Modeling and Analysis, Machine Learning Systems, and Computer Vision.
+                I graduate in December 2026 and am looking for full-time roles starting in early 2027. Outside of school,
+                I enjoy golfing, chess, hiking, and skiing. 
               </p>
             </div>
           </div>
