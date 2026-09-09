@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "katex/dist/katex.min.css";
 import "./globals.css";
+import { NavSocials } from "@/components/NavSocials";
 
 export const metadata: Metadata = {
   title: "Joey Cuthbert",
@@ -32,30 +33,7 @@ export default function RootLayout({
           <a href="/projects">Projects</a>
           <a href="/notes">Notes</a>
           <a href="/cv">Resume</a>
-          <details className="nav-social" style={{ position: "relative" }}>
-            <summary>Socials</summary>
-            <div className="nav-social-panel">
-              <a
-                href="https://www.linkedin.com/in/joey-cuthbert/"
-                target="_blank"
-                rel="noreferrer"
-                className="social-pill"
-              >
-                LinkedIn
-              </a>
-              <a
-                href="https://www.chess.com/member/joeycuthbert19"
-                target="_blank"
-                rel="noreferrer"
-                className="social-pill"
-              >
-                Chess.com
-              </a>
-              <a href="mailto:joeycuthbert19@gmail.com" className="social-pill">
-                Email
-              </a>
-            </div>
-          </details>
+          <NavSocials />
         </header>
 
         {children}
