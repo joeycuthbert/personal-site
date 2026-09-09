@@ -156,43 +156,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-    {/* Socials */}
-<section style={{ marginTop: 28 }}>
-  <h2 style={{ margin: "0 0 10px" }}>Socials</h2>
-
-  <div
-    style={{
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 10,
-    }}
-  >
-    <a
-      href="https://www.linkedin.com/in/joey-cuthbert/"
-      target="_blank"
-      rel="noreferrer"
-      className="social-pill"
-    >
-      LinkedIn
-    </a>
-
-    <a
-      href="https://www.chess.com/member/joeycuthbert19"
-      target="_blank"
-      rel="noreferrer"
-      className="social-pill"
-    >
-      Chess.com
-    </a>
-
-    <a
-      href="mailto:joeycuthbert19@gmail.com"
-      className="social-pill"
-    >
-      Email
-    </a>
-  </div>
-</section>
     </main>
   );
 }

@@ -84,6 +84,45 @@ figure[data-rehype-pretty-code-figure] pre {
 .card-meta  { font-size: 13px; opacity: 0.7; margin-bottom: 8px; }
 .card-desc  { opacity: 0.9; }
 
+/* ---------- Nav socials dropdown ---------- */
+.nav-social summary {
+  cursor: pointer;
+  list-style: none;
+  color: rgba(210, 230, 255, 0.95);
+}
+
+.nav-social summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-social summary::marker {
+  content: "";
+}
+
+.nav-social summary:hover,
+.nav-social[open] summary {
+  color: rgba(255, 255, 255, 0.98);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+.nav-social-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #11161d;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  z-index: 20;
+  min-width: 160px;
+}
+
 /* ---------- Social pills ---------- */
 .social-pill {
   display: inline-flex;
