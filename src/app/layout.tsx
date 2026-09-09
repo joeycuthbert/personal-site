@@ -31,7 +31,7 @@ export default function RootLayout({
           </a>
           <a href="/projects">Projects</a>
           <a href="/notes">Notes</a>
-          <a href="/cv">CV</a>
+          <a href="/cv">Resume</a>
         </header>
 
         {children}
