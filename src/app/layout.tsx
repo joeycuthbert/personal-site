@@ -31,7 +31,6 @@ export default function RootLayout({
             Home
           </a>
           <a href="/projects">Projects</a>
-          <a href="/notes">Notes</a>
           <a href="/cv">Resume</a>
           <NavSocials />
         </header>

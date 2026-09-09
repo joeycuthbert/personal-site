@@ -6,7 +6,6 @@ import Image from "next/image";
 
 
 export default function Home() {
-  const posts = listAll("notes").slice(0, 3);
   const projects = listAll("projects").slice(0, 3);
 
   return (
@@ -97,63 +96,28 @@ export default function Home() {
   </div>
 </section>
 
-      {/* Two-column sections */}
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: 18,
-        }}
-      >
-        {/* Projects */}
-        <div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <h2 style={{ margin: "0 0 10px" }}>Recent projects</h2>
-            <a href="/projects" className="subtle-link">(all)</a>
-
-          </div>
-
-          <div style={{ display: "grid", gap: 12 }}>
-            {projects.map((p) => (
-              <Card
-                key={p.slug}
-                title={p.frontmatter.title}
-                href={`/projects/${p.slug}`}
-                meta={p.frontmatter.date}
-                description={p.frontmatter.summary}
-              />
-            ))}
-            {projects.length === 0 ? (
-              <div style={{ opacity: 0.75 }}>
-                No projects yet. Add one in <code>content/projects</code>.
-              </div>
-            ) : null}
-          </div>
+      {/* Projects */}
+      <section>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <h2 style={{ margin: "0 0 10px" }}>Recent projects</h2>
+          <a href="/projects" className="subtle-link">(all)</a>
         </div>
 
-        {/* Blog */}
-        <div style={{ marginTop: 18 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <h2 style={{ margin: "0 0 10px" }}>Recent notes</h2>
-            <a href="/notes" className="subtle-link">(all)</a>
-          </div>
-
-          <div style={{ display: "grid", gap: 12 }}>
-            {posts.map((p) => (
-              <Card
-                key={p.slug}
-                title={p.frontmatter.title}
-                href={`/notes/${p.slug}`}
-                meta={p.frontmatter.date}
-                description={p.frontmatter.summary}
-              />
-            ))}
-            {posts.length === 0 ? (
-              <div style={{ opacity: 0.75 }}>
-                No notes yet.
-              </div>
-            ) : null}
-          </div>
+        <div style={{ display: "grid", gap: 12 }}>
+          {projects.map((p) => (
+            <Card
+              key={p.slug}
+              title={p.frontmatter.title}
+              href={`/projects/${p.slug}`}
+              meta={p.frontmatter.date}
+              description={p.frontmatter.summary}
+            />
+          ))}
+          {projects.length === 0 ? (
+            <div style={{ opacity: 0.75 }}>
+              No projects yet. Add one in <code>content/projects</code>.
+            </div>
+          ) : null}
         </div>
       </section>
     </main>
