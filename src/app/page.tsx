@@ -58,7 +58,7 @@ export default function Home() {
               </p>
               <p style={{ margin: "10px 0 0", opacity: 0.85, lineHeight: 1.6 }}>
                 This past summer I worked with the National Air and Space Intelligence Center (NASIC) through the Sensors Directorate
-                Internship Program, where I studied the robustness of CNNs on synthetic aperture radar images against noise attacks.
+                Internship Program, where I studied the robustness of CNNs against noise attacks on synthetic aperture radar images.
                 Before Georgia Tech, I studied Math and Computer Science at Berry College, graduating in 2025. 
                 My undergraduate research focused on feature-less machine learning for game predictions, and I also competed on the NCAA 
                Men's Lacrosse team. 
