@@ -21,7 +21,7 @@ export default function CV() {
       </div>
 
       <a href="/resume.pdf" target="_blank" rel="noreferrer" className="subtle-link">
-        Open the resume in a new tab ↗
+        Open in a new tab ↗
       </a>
     </main>
   );
